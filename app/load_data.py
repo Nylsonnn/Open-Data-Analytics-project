@@ -100,11 +100,25 @@ def main():
         with ENGINE.begin() as conn:
             df.to_sql("_accidents_stage", con=conn, if_exists="replace", index=False)
             conn.execute(text("""
-                INSERT INTO accidents
-                SELECT * FROM _accidents_stage
+                INSERT INTO accidents (
+                    accident_index, accident_date, accident_time,
+                    latitude, longitude, severity,
+                    number_of_casualties, number_of_vehicles,
+                    road_type, speed_limit, weather, light_conditions,
+                    urban_or_rural, raw_json
+                )
+                SELECT
+                    accident_index, accident_date, accident_time,
+                    latitude, longitude, severity,
+                    number_of_casualties, number_of_vehicles,
+                    road_type, speed_limit, weather, light_conditions,
+                    urban_or_rural, raw_json::jsonb      -- <— cast here
+                FROM _accidents_stage
                 ON CONFLICT (accident_index) DO NOTHING;
+
                 DROP TABLE _accidents_stage;
             """))
+
         total += len(df)
         print(f"Inserted {total} rows...")
 
