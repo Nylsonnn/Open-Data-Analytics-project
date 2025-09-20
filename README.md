@@ -7,15 +7,13 @@ It lets you filter by year and accident severity, view KPIs, trends, top road ty
 
 ## ✨ Features
 
-- 📊 **Key Metrics (KPIs):** total accidents, average casualties, average vehicles involved  
-- 📈 **Monthly accident trends** with interactive line charts  
-- 🛣️ **Top road types** by accident count  
-- 🗺️ **Map view** (sampled points) to explore accident locations  
-- 🎨 **Modern dark UI** for a clean, professional look  
-
+-  **Key Metrics (KPIs):** total accidents, average casualties, average vehicles involved  
+-  **Monthly accident trends** with interactive line charts  
+-  **Top road types** by accident count  
+-  **Map view** (sampled points) to explore accident locations  
 ---
 
-## 🛠️ Installation
+## 🛠 Installation
 
 1. **Clone the repo**  
 
@@ -48,7 +46,7 @@ This starts:
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 .
@@ -71,7 +69,7 @@ This starts:
 
 ---
 
-## 🧑‍💻 Development
+## Development
 
 If you want to run locally without Docker:
 
@@ -83,13 +81,13 @@ python dashboard.py
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions welcome! Feel free to fork, open issues, or submit PRs.  
 
 ---
 
-## 📜 License
+## License
 
 MIT — feel free to use and adapt.  
 
