@@ -8,11 +8,10 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 
-PANEL_BG = "#274994"   # matches CSS panel
-GRID = "#2a3748"  
-AXIS = "#4b5563"
-TEXT     = "#e5e7eb"   # labels
-
+PANEL_BG = "#121a2b"
+GRID     = "#1f2b44"
+AXIS     = "#2a3a5d"
+TEXT     = "#e7eaf1"
 # ---- DB connection (matches docker-compose) ----
 DB_HOST = os.getenv("DB_HOST", "db")
 DB_PORT = int(os.getenv("DB_PORT", "5432"))
@@ -25,37 +24,30 @@ ENGINE = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB
 app = dash.Dash(__name__)
 app.title = "UK Open Data Analytics"
 
-def style_fig(fig: go.Figure, title: str | None = None, height: int | None = None) -> go.Figure:
+def style_fig(fig: go.Figure, title: str = None, height: int | None = None) -> go.Figure:
+    # I avoid anything that could sit above Plotly; only set colors/margins.
     if title:
-        fig.update_layout(title=dict(text=title, font=dict(color=TEXT)))
-
+        fig.update_layout(title=title)
     fig.update_layout(
-        template=None,                 # <- kill any global/default template
+        template="plotly_dark",
         paper_bgcolor=PANEL_BG,
         plot_bgcolor=PANEL_BG,
-        font=dict(color=TEXT),
-        legend=dict(font=dict(color=TEXT)),
-        margin=dict(t=48, r=16, b=40, l=50),
+        font_color=TEXT,
+        margin=dict(t=50, r=18, b=45, l=55),
         height=height or fig.layout.height or 360,
+        title_x=0.02,
+        title_y=0.97,
+        title_font=dict(size=16, color=TEXT, family="Inter, system-ui"),
     )
+    fig.update_xaxes(showgrid=True, gridcolor=GRID, zeroline=False, showline=True, linecolor=AXIS)
+    fig.update_yaxes(showgrid=True, gridcolor=GRID, zeroline=False, showline=True, linecolor=AXIS)
 
-    # brighten grid/axis so they can't disappear on dark bg
-    fig.update_xaxes(
-        showgrid=True, gridcolor="#3a4a61",
-        zeroline=False, showline=True, linecolor="#607592",
-        tickfont=dict(color="#d1d5db"), title_font=dict(color="#d1d5db")
-    )
-    fig.update_yaxes(
-        showgrid=True, gridcolor="#3a4a61",
-        zeroline=False, showline=True, linecolor="#607592",
-        tickfont=dict(color="#d1d5db"), title_font=dict(color="#d1d5db")
-    )
-
-    # only touch scatter traces (bars don’t support marker.size in the same way)
+    # I keep line/marker tweaks generic. Plotly will ignore inapplicable ones safely.
     for tr in fig.data:
-        if tr.type == "scatter":
-            tr.update(marker=dict(size=7, color="#8ab4ff"), line=dict(width=2.6, color="#8ab4ff"))
-
+        if hasattr(tr, "line"):
+            tr.line.width = 2.2
+        if hasattr(tr, "marker") and hasattr(tr.marker, "size"):
+            tr.marker.size = 6
     return fig
 
 
@@ -72,20 +64,19 @@ def empty_fig(title: str, height: int = 360) -> go.Figure:
 
 
 def year_clause(year: str) -> str:
+    # Year filter expressed as closed-open range (index-friendly)
     if year == "All":
         return ""
     y = int(year)
-    # inclusive start, exclusive end (index friendly)
     return f"accident_date >= DATE '{y}-01-01' AND accident_date < DATE '{y+1}-01-01'"
+
 
 
 def kpis_sql(year, max_sev):
     where = []
     yc = year_clause(year)
-    if yc:
-        where.append(yc)
-    if max_sev:
-        where.append(f"severity <= {int(max_sev)}")
+    if yc: where.append(yc)
+    if max_sev: where.append(f"severity <= {int(max_sev)}")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
     return f"""
         SELECT
@@ -99,10 +90,8 @@ def kpis_sql(year, max_sev):
 def trend_sql(year, max_sev):
     where = []
     yc = year_clause(year)
-    if yc:
-        where.append(yc)
-    if max_sev:
-        where.append(f"severity <= {int(max_sev)}")
+    if yc: where.append(yc)
+    if max_sev: where.append(f"severity <= {int(max_sev)}")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
     return f"""
         SELECT DATE_TRUNC('month', accident_date) AS month, COUNT(*)::BIGINT AS cnt
@@ -112,14 +101,11 @@ def trend_sql(year, max_sev):
         ORDER BY 1;
     """
 
-
 def roads_sql(year, max_sev):
     where = []
     yc = year_clause(year)
-    if yc:
-        where.append(yc)
-    if max_sev:
-        where.append(f"severity <= {int(max_sev)}")
+    if yc: where.append(yc)
+    if max_sev: where.append(f"severity <= {int(max_sev)}")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
     return f"""
         SELECT road_type, COUNT(*)::BIGINT AS cnt
@@ -133,10 +119,8 @@ def roads_sql(year, max_sev):
 def points_sql(year, max_sev, limit=5000):
     where = ["latitude IS NOT NULL", "longitude IS NOT NULL"]
     yc = year_clause(year)
-    if yc:
-        where.append(yc)
-    if max_sev:
-        where.append(f"severity <= {int(max_sev)}")
+    if yc: where.append(yc)
+    if max_sev: where.append(f"severity <= {int(max_sev)}")
     where_sql = "WHERE " + " AND ".join(where)
     return f"""
         SELECT latitude, longitude, severity
@@ -148,7 +132,7 @@ def points_sql(year, max_sev, limit=5000):
 
 app.layout = html.Div(
     [
-        html.H1("🇬🇧 UK Open Data Analytics", style={"marginBottom": "8px"}),
+        html.H1("🇬🇧 UK Open Data Analytics"),
 
         html.Div(
             [
@@ -175,18 +159,15 @@ app.layout = html.Div(
                     ]
                 ),
             ],
-            style={"display": "grid", "gridTemplateColumns": "1fr 1fr", "gap": "12px", "maxWidth": "520px"},
+            className="filters",
         ),
 
-        html.Div(id="kpi-cards",
-                 style={"display": "grid", "gridTemplateColumns": "repeat(3, 1fr)",
-                        "gap": "12px", "marginTop": "14px"}),
+        html.Div(id="kpi-cards", className="kpis"),
 
-        dcc.Graph(id="trend", style={"height": "320px", "marginTop": "10px"}),
-        dcc.Graph(id="roads", style={"height": "320px"}),
-        dcc.Graph(id="map", style={"height": "600px"}),
-    ],
-    style={"padding": "16px"},
+        dcc.Graph(id="trend", className="graph", config={"displayModeBar": False}),
+        dcc.Graph(id="roads", className="graph", config={"displayModeBar": False}),
+        dcc.Graph(id="map", className="graph"),
+    ]
 )
 
 # ---- Callbacks ----
@@ -201,21 +182,17 @@ def render_kpis(year, max_sev):
     avg_cas = float(df.loc[0, "avg_cas"])
     avg_veh = float(df.loc[0, "avg_veh"])
 
-    return [
-        card("Accidents", f"{n:,}"),
-        card("Avg casualties", f"{avg_cas:.2f}"),
-        card("Avg vehicles", f"{avg_veh:.2f}"),
+    def card(title, value):
+        # I keep the markup minimal and let CSS do the heavy lifting
+        return html.Div(
+            [html.Div(title, className="kpi-title"),
+             html.Div(value, className="kpi-value")],
+            className="kpi-card",
+        )
 
-    ]
-
-def card(title, value):
-    return html.Div(
-        [
-            html.Div(title, className="kpi-title"),
-            html.Div(value, className="kpi-value"),
-        ],
-        className="kpi-card"
-    )
+    return [card("Accidents", f"{n:,}"),
+            card("Avg casualties", f"{avg_cas:.2f}"),
+            card("Avg vehicles", f"{avg_veh:.2f}")]
 
 @app.callback(
     Output("trend", "figure"),
@@ -225,9 +202,12 @@ def card(title, value):
 def render_trend(year, max_sev):
     df = pd.read_sql(trend_sql(year, max_sev), ENGINE)
     if df.empty:
-        return empty_fig("Monthly accidents", height=360)
+        fig = go.Figure()
+        fig.add_annotation(text="No data for current selection",
+                           x=.5, y=.5, xref="paper", yref="paper",
+                           showarrow=False, font=dict(color="#93a1be"))
+        return style_fig(fig, "Monthly accidents", height=360)
     fig = px.line(df, x="month", y="cnt", markers=True)
-    fig.update_traces(mode="lines+markers")
     return style_fig(fig, "Monthly accidents", height=360)
 
 @app.callback(
@@ -238,16 +218,13 @@ def render_trend(year, max_sev):
 def render_roads(year, max_sev):
     df = pd.read_sql(roads_sql(year, max_sev), ENGINE)
     if df.empty:
-        return empty_fig("Top road types", height=360)
+        fig = go.Figure()
+        fig.add_annotation(text="No data for current selection",
+                           x=.5, y=.5, xref="paper", yref="paper",
+                           showarrow=False, font=dict(color="#93a1be"))
+        return style_fig(fig, "Top road types", height=360)
     fig = px.bar(df, x="road_type", y="cnt")
-    fig.update_traces(
-        marker_color="#8ab4ff",
-        marker_line_color="#cbd5e1",
-        marker_line_width=0.6,
-        opacity=0.95,
-    )
     return style_fig(fig, "Top road types", height=360)
-
 
 @app.callback(
     Output("map", "figure"),
@@ -259,15 +236,14 @@ def render_map(year, max_sev):
     if df.empty:
         fig = px.scatter_mapbox(lat=[], lon=[], height=560, zoom=4)
         fig.update_layout(mapbox_style="open-street-map")
-        fig.update_traces(marker=dict(size=7, color="#8ab4ff")) 
         return style_fig(fig, "Accidents (sampled)", height=560)
 
     fig = px.scatter_mapbox(
         df, lat="latitude", lon="longitude", color="severity",
-        height=560, zoom=4
+        zoom=4, height=560
     )
-    fig.update_traces(marker=dict(size=7))  # <-- make accident dots larger
-    fig.update_layout(mapbox_style="carto-darkmatter")
+    # I default to a colored basemap without needing a token
+    fig.update_layout(mapbox_style="open-street-map")
     return style_fig(fig, "Accidents (sampled)", height=560)
 
 if __name__ == "__main__":
