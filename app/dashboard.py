@@ -6,6 +6,12 @@ import dash
 from dash import html, dcc
 from dash.dependencies import Input, Output
 import plotly.express as px
+import plotly.graph_objects as go
+
+PANEL_BG = "#111827"   # matches CSS panel
+GRID     = "#1f2937"   # grid lines
+AXIS     = "#334155"   # axis line
+TEXT     = "#e5e7eb"   # labels
 
 # ---- DB connection (matches docker-compose) ----
 DB_HOST = os.getenv("DB_HOST", "db")
@@ -19,30 +25,42 @@ ENGINE = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB
 app = dash.Dash(__name__)
 app.title = "UK Open Data Analytics"
 
-import plotly.graph_objects as go
-
-def style_fig(fig: go.Figure, title: str = None) -> go.Figure:
+def style_fig(fig: go.Figure, title: str = None, height: int | None = None) -> go.Figure:
     if title:
         fig.update_layout(title=title)
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        font_color="#e5e7eb",
-        margin=dict(t=50, r=20, b=40, l=50),
-        xaxis=dict(gridcolor="#1f2937", zeroline=False),
-        yaxis=dict(gridcolor="#1f2937", zeroline=False),
+        paper_bgcolor=PANEL_BG,
+        plot_bgcolor=PANEL_BG,
+        font_color=TEXT,
+        margin=dict(t=48, r=16, b=40, l=50),
+        height=height or fig.layout.height or 360,
+    )
+    fig.update_xaxes(
+        showgrid=True, gridcolor=GRID,
+        zeroline=False, showline=True, linecolor=AXIS,
+        tickfont=dict(color=TEXT)
+    )
+    fig.update_yaxes(
+        showgrid=True, gridcolor=GRID,
+        zeroline=False, showline=True, linecolor=AXIS,
+        tickfont=dict(color=TEXT)
+    )
+    fig.update_traces(
+        line=dict(width=2.2),
+        marker=dict(size=6)
     )
     return fig
 
-def empty_fig(title: str) -> go.Figure:
+def empty_fig(title: str, height: int = 360) -> go.Figure:
     fig = go.Figure()
     fig.add_annotation(
         text="No data for current selection",
-        x=0.5, y=0.5, showarrow=False, xref="paper", yref="paper",
-        font=dict(size=14, color="#9ca3af")
+        x=0.5, y=0.5, xref="paper", yref="paper",
+        showarrow=False, font=dict(size=14, color="#9ca3af")
     )
-    return style_fig(fig, title)
+    fig.update_layout(height=height)
+    return style_fig(fig, title, height)
 
 
 def year_clause(year: str) -> str:
@@ -199,9 +217,10 @@ def card(title, value):
 def render_trend(year, max_sev):
     df = pd.read_sql(trend_sql(year, max_sev), ENGINE)
     if df.empty:
-        return empty_fig("Monthly accidents")
+        return empty_fig("Monthly accidents", height=360)
     fig = px.line(df, x="month", y="cnt", markers=True)
-    return style_fig(fig, "Monthly accidents")
+    fig.update_traces(mode="lines+markers")
+    return style_fig(fig, "Monthly accidents", height=360)
 
 @app.callback(
     Output("roads", "figure"),
@@ -211,9 +230,9 @@ def render_trend(year, max_sev):
 def render_roads(year, max_sev):
     df = pd.read_sql(roads_sql(year, max_sev), ENGINE)
     if df.empty:
-        return empty_fig("Top road types")
+        return empty_fig("Top road types", height=360)
     fig = px.bar(df, x="road_type", y="cnt")
-    return style_fig(fig, "Top road types")
+    return style_fig(fig, "Top road types", height=360)
 
 @app.callback(
     Output("map", "figure"),
@@ -223,15 +242,13 @@ def render_roads(year, max_sev):
 def render_map(year, max_sev):
     df = pd.read_sql(points_sql(year, max_sev, limit=5000), ENGINE)
     if df.empty:
-        fig = px.scatter_mapbox(lat=[], lon=[], zoom=4, height=600)
+        fig = px.scatter_mapbox(lat=[], lon=[], height=560, zoom=4)
         fig.update_layout(mapbox_style="carto-darkmatter")
-        return style_fig(fig, "Accidents (sampled)")
+        return style_fig(fig, "Accidents (sampled)", height=560)
+
     fig = px.scatter_mapbox(
         df, lat="latitude", lon="longitude", color="severity",
-        zoom=4, height=600
+        height=560, zoom=4
     )
     fig.update_layout(mapbox_style="carto-darkmatter")
-    return style_fig(fig, "Accidents (sampled)")
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8050, debug=True)
+    return style_fig(fig, "Accidents (sampled)", height=560)
