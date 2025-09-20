@@ -252,3 +252,6 @@ def render_map(year, max_sev):
     )
     fig.update_layout(mapbox_style="carto-darkmatter")
     return style_fig(fig, "Accidents (sampled)", height=560)
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8050, debug=True)
