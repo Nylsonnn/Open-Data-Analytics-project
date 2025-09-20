@@ -7,6 +7,7 @@ import numpy as np
 import glob
 
 DATA_GLOB = "data/collisions_*.csv"
+CHUNKSIZE = 50000
 
 # ---- DB connection (Docker envs are already set in compose) ----
 DB_HOST = os.getenv("DB_HOST", "db")
@@ -102,7 +103,7 @@ def main():
     for path in files:
         print(f"\n=== Loading {os.path.basename(path)} ===")
         per_file = 0
-        for chunk in pd.read_csv(path, chunksize=chunksize, low_memory=False, dtype=str, encoding="utf-8"):
+        for chunk in pd.read_csv(path, chunksize=CHUNKSIZE, low_memory=False, dtype=str, encoding="utf-8"):
             df = tidy_chunk(chunk)
 
             with ENGINE.begin() as conn:
