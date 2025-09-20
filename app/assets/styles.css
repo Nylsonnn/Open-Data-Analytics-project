@@ -1,89 +1,91 @@
-/* ===== Base ===== */
-:root {
+/* ---------- Design tokens (my little theme) ---------- */
+:root{
   --bg: #0b1220;
-  --panel: #111827;
-  --muted: #9ca3af;
-  --ring: #1f2937;
-  --brand: #3b82f6;
-  --brand-light: #60a5fa;
+  --panel: #121a2b;
+  --panel-border: #1f2b44;
+  --text: #e7eaf1;
+  --muted: #93a1be;
+  --accent: #6aa7ff;
+  --accent-soft: rgba(106, 167, 255, .15);
+  --shadow: 0 6px 18px rgba(0,0,0,.25);
+  --radius: 14px;
 }
 
-html, body {
-  background: var(--bg);
-  color: #e5e7eb;
-  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+/* ---------- Page ---------- */
+html, body { height: 100%; }
+body{
   margin: 0;
-  padding: 0;
+  background: radial-gradient(80% 100% at 20% 0%, #0c1528 0%, var(--bg) 60%) fixed;
+  color: var(--text);
+  font: 14px/1.5 Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
 }
 
-/* ===== Layout ===== */
-.wrapper {
-  max-width: 1200px;
-  margin: 24px auto;
-  padding: 0 16px;
+/* ---------- Header ---------- */
+h1{
+  margin: 12px 0 6px;
+  font-size: 28px;
+  letter-spacing: .2px;
 }
 
-/* ===== Header ===== */
-h1 {
-  font-size: 32px;
-  font-weight: 800;
-  margin: 0 0 12px;
-  color: #fff;
+/* ---------- Filter row ---------- */
+.filters{
+  display: grid;
+  grid-template-columns: 220px 260px;
+  gap: 12px;
+  max-width: 520px;
 }
-
-h2 {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 16px 0 8px;
-  color: var(--brand-light);
-}
-
-/* ===== Controls ===== */
-label {
-  font-size: 14px;
-  color: var(--muted);
-  margin-bottom: 4px;
+.filters label{
   display: block;
-}
-
-.Select-control, .Select-menu-outer {
-  background: var(--panel) !important;
-  border: 1px solid var(--ring) !important;
-  color: #fff !important;
-}
-
-.Select-value-label {
-  color: #fff !important;
-}
-
-/* ===== KPI Cards ===== */
-.kpi-card {
-  background: var(--panel);
-  border-radius: 12px;
-  padding: 20px;
-  border: 1px solid var(--ring);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-}
-
-.kpi-title {
-  font-size: 13px;
+  margin: 2px 0 6px;
   color: var(--muted);
+  font-weight: 500;
+}
+.Select-control, .Select--single > .Select-control{
+  background: var(--panel) !important;
+  border: 1px solid var(--panel-border) !important;
+  color: var(--text) !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+}
+.Select-menu-outer{
+  background: var(--panel) !important;
+  border: 1px solid var(--panel-border) !important;
 }
 
-.kpi-value {
+/* ---------- KPI cards ---------- */
+.kpis{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+.kpi-card{
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.kpi-title{
+  color: var(--muted);
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.kpi-value{
   font-size: 28px;
   font-weight: 700;
-  color: #fff;
+  letter-spacing: .3px;
 }
 
-/* ===== Graphs ===== */
-.js-plotly-plot .plotly .main-svg {
-  background: var(--panel) !important;
-  border-radius: 12px;
+/* ---------- Graphs ---------- */
+.graph{
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  margin-top: 12px;
+  padding: 6px;         /* keep a tiny inset so axes never stick to the edge */
 }
 
-/* kill the overlay that’s sitting above graphs */
-.panel::before,
-.dash-graph::before,
-.dash-graph::after { display: none !important; }
-
+/* Never block the graphs with floating overlays */
+*[style*="position: fixed"] { pointer-events: auto; }
