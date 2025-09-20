@@ -18,20 +18,21 @@ CSV_PATH = "data/collisions_2023.csv"   # inside /app
 
 # Columns we’ll keep -> map to our table schema
 COLUMN_MAP = {
-    "Accident_Index": "accident_index",
-    "Date": "accident_date",
-    "Time": "accident_time",
-    "Latitude": "latitude",
-    "Longitude": "longitude",
-    "Accident_Severity": "severity",
-    "Number_of_Casualties": "number_of_casualties",
-    "Number_of_Vehicles": "number_of_vehicles",
-    "Road_Type": "road_type",
-    "Speed_limit": "speed_limit",
-    "Weather_Conditions": "weather",
-    "Light_Conditions": "light_conditions",
-    "Urban_or_Rural_Area": "urban_or_rural",
+    "accident_index": "accident_index",
+    "date": "accident_date",                 # DD/MM/YYYY
+    "time": "accident_time",                 # HH:MM
+    "latitude": "latitude",
+    "longitude": "longitude",
+    "accident_severity": "severity",
+    "number_of_casualties": "number_of_casualties",
+    "number_of_vehicles": "number_of_vehicles",
+    "road_type": "road_type",
+    "speed_limit": "speed_limit",
+    "weather_conditions": "weather",
+    "light_conditions": "light_conditions",
+    "urban_or_rural_area": "urban_or_rural",
 }
+
 
 # Create table (if not exists)
 CREATE_SQL = """
