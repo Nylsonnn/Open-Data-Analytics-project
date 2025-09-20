@@ -62,9 +62,7 @@ def tidy_chunk(df: pd.DataFrame) -> pd.DataFrame:
     df = df[[c for c in COLUMN_MAP.keys() if c in df.columns]].copy()
     df = df.rename(columns=COLUMN_MAP)
 
-    # Convert date/time
-    # Convert date/time  (UK format dates)
-# Convert date/time (UK format)
+    # Convert date/time (UK format)
     if "accident_date" in df.columns:
         df["accident_date"] = pd.to_datetime(
             df["accident_date"], dayfirst=True, errors="coerce"
