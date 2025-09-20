@@ -19,10 +19,19 @@ ENGINE = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB
 app = dash.Dash(__name__)
 app.title = "UK Open Data Analytics"
 
+def year_clause(year: str) -> str:
+    if year == "All":
+        return ""
+    y = int(year)
+    # inclusive start, exclusive end (index friendly)
+    return f"accident_date >= DATE '{y}-01-01' AND accident_date < DATE '{y+1}-01-01'"
+
+
 def kpis_sql(year, max_sev):
     where = []
-    if year != "All":
-        where.append(f"EXTRACT(YEAR FROM accident_date) = {int(year)}")
+    yc = year_clause(year)
+    if yc:
+        where.append(yc)
     if max_sev:
         where.append(f"severity <= {int(max_sev)}")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
@@ -37,8 +46,9 @@ def kpis_sql(year, max_sev):
 
 def trend_sql(year, max_sev):
     where = []
-    if year != "All":
-        where.append(f"EXTRACT(YEAR FROM accident_date) = {int(year)}")
+    yc = year_clause(year)
+    if yc:
+        where.append(yc)
     if max_sev:
         where.append(f"severity <= {int(max_sev)}")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
@@ -50,10 +60,12 @@ def trend_sql(year, max_sev):
         ORDER BY 1;
     """
 
+
 def roads_sql(year, max_sev):
     where = []
-    if year != "All":
-        where.append(f"EXTRACT(YEAR FROM accident_date) = {int(year)}")
+    yc = year_clause(year)
+    if yc:
+        where.append(yc)
     if max_sev:
         where.append(f"severity <= {int(max_sev)}")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
@@ -67,21 +79,20 @@ def roads_sql(year, max_sev):
     """
 
 def points_sql(year, max_sev, limit=5000):
-    where = [
-        "latitude IS NOT NULL",
-        "longitude IS NOT NULL"
-    ]
-    if year != "All":
-        where.append(f"EXTRACT(YEAR FROM accident_date) = {int(year)}")
+    where = ["latitude IS NOT NULL", "longitude IS NOT NULL"]
+    yc = year_clause(year)
+    if yc:
+        where.append(yc)
     if max_sev:
         where.append(f"severity <= {int(max_sev)}")
-    where_sql = f"WHERE {' AND '.join(where)}"
+    where_sql = "WHERE " + " AND ".join(where)
     return f"""
         SELECT latitude, longitude, severity
         FROM accidents
         {where_sql}
         LIMIT {int(limit)};
     """
+
 
 app.layout = html.Div(
     [
