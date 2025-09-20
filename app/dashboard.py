@@ -8,9 +8,9 @@ from dash.dependencies import Input, Output
 import plotly.express as px
 import plotly.graph_objects as go
 
-PANEL_BG = "#111827"   # matches CSS panel
-GRID     = "#1f2937"   # grid lines
-AXIS     = "#334155"   # axis line
+PANEL_BG = "#274994"   # matches CSS panel
+GRID = "#2a3748"  
+AXIS = "#4b5563"
 TEXT     = "#e5e7eb"   # labels
 
 # ---- DB connection (matches docker-compose) ----
