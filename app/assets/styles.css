@@ -1,0 +1,83 @@
+/* ===== Base ===== */
+:root {
+  --bg: #0b1220;
+  --panel: #111827;
+  --muted: #9ca3af;
+  --ring: #1f2937;
+  --brand: #3b82f6;
+  --brand-light: #60a5fa;
+}
+
+html, body {
+  background: var(--bg);
+  color: #e5e7eb;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== Layout ===== */
+.wrapper {
+  max-width: 1200px;
+  margin: 24px auto;
+  padding: 0 16px;
+}
+
+/* ===== Header ===== */
+h1 {
+  font-size: 32px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: #fff;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: var(--brand-light);
+}
+
+/* ===== Controls ===== */
+label {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.Select-control, .Select-menu-outer {
+  background: var(--panel) !important;
+  border: 1px solid var(--ring) !important;
+  color: #fff !important;
+}
+
+.Select-value-label {
+  color: #fff !important;
+}
+
+/* ===== KPI Cards ===== */
+.kpi-card {
+  background: var(--panel);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid var(--ring);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+
+.kpi-title {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.kpi-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* ===== Graphs ===== */
+.js-plotly-plot .plotly .main-svg {
+  background: var(--panel) !important;
+  border-radius: 12px;
+}
