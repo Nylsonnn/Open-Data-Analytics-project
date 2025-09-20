@@ -1,0 +1,106 @@
+# app/load_data.py
+import os
+import json
+import pandas as pd
+from sqlalchemy import create_engine, text
+
+# ---- DB connection (Docker envs are already set in compose) ----
+DB_HOST = os.getenv("DB_HOST", "db")
+DB_PORT = int(os.getenv("DB_PORT", "5432"))
+DB_NAME = os.getenv("DB_NAME", "ukdata")
+DB_USER = os.getenv("DB_USER", "postgres")
+DB_PASS = os.getenv("DB_PASS", "postgres")
+
+ENGINE = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+
+# ---- Input CSV ----
+CSV_PATH = "data/collisions_2023.csv"   # inside /app
+
+# Columns we’ll keep -> map to our table schema
+COLUMN_MAP = {
+    "Accident_Index": "accident_index",
+    "Date": "accident_date",
+    "Time": "accident_time",
+    "Latitude": "latitude",
+    "Longitude": "longitude",
+    "Accident_Severity": "severity",
+    "Number_of_Casualties": "number_of_casualties",
+    "Number_of_Vehicles": "number_of_vehicles",
+    "Road_Type": "road_type",
+    "Speed_limit": "speed_limit",
+    "Weather_Conditions": "weather",
+    "Light_Conditions": "light_conditions",
+    "Urban_or_Rural_Area": "urban_or_rural",
+}
+
+# Create table (if not exists)
+CREATE_SQL = """
+CREATE TABLE IF NOT EXISTS accidents (
+  accident_index        TEXT PRIMARY KEY,
+  accident_date         DATE,
+  accident_time         TIME,
+  latitude              DOUBLE PRECISION,
+  longitude             DOUBLE PRECISION,
+  severity              SMALLINT,
+  number_of_casualties  SMALLINT,
+  number_of_vehicles    SMALLINT,
+  road_type             TEXT,
+  speed_limit           SMALLINT,
+  weather               TEXT,
+  light_conditions      TEXT,
+  urban_or_rural        TEXT,
+  raw_json              JSONB
+);
+CREATE INDEX IF NOT EXISTS ix_accidents_date ON accidents (accident_date);
+CREATE INDEX IF NOT EXISTS ix_accidents_severity ON accidents (severity);
+"""
+
+def tidy_chunk(df: pd.DataFrame) -> pd.DataFrame:
+    """Select, rename, and type-cast one chunk."""
+    raw = df.to_dict(orient="records")
+
+    df = df[[c for c in COLUMN_MAP.keys() if c in df.columns]].copy()
+    df = df.rename(columns=COLUMN_MAP)
+
+    # Convert date/time
+    if "accident_date" in df.columns:
+        df["accident_date"] = pd.to_datetime(df["accident_date"], errors="coerce").dt.date
+    if "accident_time" in df.columns:
+        df["accident_time"] = pd.to_datetime(df["accident_time"], errors="coerce").dt.time
+
+    # Cast numeric-ish fields
+    for col in ["latitude", "longitude"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+    for col in ["severity", "number_of_casualties", "number_of_vehicles", "speed_limit"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").astype("Int64")
+
+    df["raw_json"] = [json.dumps(r) for r in raw]
+    return df
+
+def main():
+    # Create table + indexes
+    with ENGINE.begin() as conn:
+        conn.execute(text(CREATE_SQL))
+
+    chunksize = 50_000
+    total = 0
+
+    for chunk in pd.read_csv(CSV_PATH, chunksize=chunksize, low_memory=False, dtype=str, encoding="utf-8"):
+        df = tidy_chunk(chunk)
+        with ENGINE.begin() as conn:
+            df.to_sql("_accidents_stage", con=conn, if_exists="replace", index=False)
+            conn.execute(text("""
+                INSERT INTO accidents
+                SELECT * FROM _accidents_stage
+                ON CONFLICT (accident_index) DO NOTHING;
+                DROP TABLE _accidents_stage;
+            """))
+        total += len(df)
+        print(f"Inserted {total} rows...")
+
+    print("✅ Data load complete")
+
+if __name__ == "__main__":
+    main()
