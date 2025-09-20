@@ -19,6 +19,32 @@ ENGINE = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB
 app = dash.Dash(__name__)
 app.title = "UK Open Data Analytics"
 
+import plotly.graph_objects as go
+
+def style_fig(fig: go.Figure, title: str = None) -> go.Figure:
+    if title:
+        fig.update_layout(title=title)
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        font_color="#e5e7eb",
+        margin=dict(t=50, r=20, b=40, l=50),
+        xaxis=dict(gridcolor="#1f2937", zeroline=False),
+        yaxis=dict(gridcolor="#1f2937", zeroline=False),
+    )
+    return fig
+
+def empty_fig(title: str) -> go.Figure:
+    fig = go.Figure()
+    fig.add_annotation(
+        text="No data for current selection",
+        x=0.5, y=0.5, showarrow=False, xref="paper", yref="paper",
+        font=dict(size=14, color="#9ca3af")
+    )
+    return style_fig(fig, title)
+
+
 def year_clause(year: str) -> str:
     if year == "All":
         return ""
@@ -172,9 +198,10 @@ def card(title, value):
 )
 def render_trend(year, max_sev):
     df = pd.read_sql(trend_sql(year, max_sev), ENGINE)
-    fig = px.line(df, x="month", y="cnt", markers=True, title="Monthly accidents")
-    fig.update_layout(xaxis_title="Month", yaxis_title="Count")
-    return fig
+    if df.empty:
+        return empty_fig("Monthly accidents")
+    fig = px.line(df, x="month", y="cnt", markers=True)
+    return style_fig(fig, "Monthly accidents")
 
 @app.callback(
     Output("roads", "figure"),
@@ -183,9 +210,10 @@ def render_trend(year, max_sev):
 )
 def render_roads(year, max_sev):
     df = pd.read_sql(roads_sql(year, max_sev), ENGINE)
-    fig = px.bar(df, x="road_type", y="cnt", title="Top road types")
-    fig.update_layout(xaxis_title="Road type", yaxis_title="Count")
-    return fig
+    if df.empty:
+        return empty_fig("Top road types")
+    fig = px.bar(df, x="road_type", y="cnt")
+    return style_fig(fig, "Top road types")
 
 @app.callback(
     Output("map", "figure"),
@@ -195,11 +223,15 @@ def render_roads(year, max_sev):
 def render_map(year, max_sev):
     df = pd.read_sql(points_sql(year, max_sev, limit=5000), ENGINE)
     if df.empty:
-        return px.scatter_mapbox(lat=[], lon=[], zoom=4).update_layout(mapbox_style="open-street-map", title="Map")
-    fig = px.scatter_mapbox(df, lat="latitude", lon="longitude", color="severity",
-                            title="Accidents (sampled)", zoom=4, height=600)
-    fig.update_layout(mapbox_style="open-street-map")
-    return fig
+        fig = px.scatter_mapbox(lat=[], lon=[], zoom=4, height=600)
+        fig.update_layout(mapbox_style="carto-darkmatter")
+        return style_fig(fig, "Accidents (sampled)")
+    fig = px.scatter_mapbox(
+        df, lat="latitude", lon="longitude", color="severity",
+        zoom=4, height=600
+    )
+    fig.update_layout(mapbox_style="carto-darkmatter")
+    return style_fig(fig, "Accidents (sampled)")
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8050, debug=True)
