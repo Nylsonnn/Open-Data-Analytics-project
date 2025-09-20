@@ -2,11 +2,10 @@ services:
   db:
     image: postgres:15
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      POSTGRES_DB: ukdata    # ← add this
+
   app:
     image: python:3.11-slim
     container_name: ukdata_app
