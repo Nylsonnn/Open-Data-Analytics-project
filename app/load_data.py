@@ -64,15 +64,17 @@ def tidy_chunk(df: pd.DataFrame) -> pd.DataFrame:
 
     # Convert date/time
     # Convert date/time  (UK format dates)
+# Convert date/time (UK format)
     if "accident_date" in df.columns:
         df["accident_date"] = pd.to_datetime(
-            df["accident_date"], errors="coerce", dayfirst=True
+            df["accident_date"], dayfirst=True, errors="coerce"
         ).dt.date
 
     if "accident_time" in df.columns:
         df["accident_time"] = pd.to_datetime(
-            df["accident_time"], errors="coerce"
+            df["accident_time"], format="%H:%M", errors="coerce"
         ).dt.time
+
 
 
     # Cast numeric-ish fields
