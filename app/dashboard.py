@@ -25,40 +25,41 @@ ENGINE = create_engine(f"postgresql+psycopg2://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB
 app = dash.Dash(__name__)
 app.title = "UK Open Data Analytics"
 
-def style_fig(fig: go.Figure, title: str = None, height: int | None = None) -> go.Figure:
+def style_fig(fig: go.Figure, title: str | None = None, height: int | None = None) -> go.Figure:
     if title:
-        fig.update_layout(title=title)
+        fig.update_layout(title=dict(text=title, font=dict(color=TEXT)))
+
     fig.update_layout(
-        template="plotly_dark",
-        paper_bgcolor=PANEL_BG,
-        plot_bgcolor=PANEL_BG,
-        font_color=TEXT,
+        paper_bgcolor=PANEL_BG,   # panel background
+        plot_bgcolor=PANEL_BG,    # plot area background
+        font=dict(color=TEXT),    # default text color
+        legend=dict(font=dict(color=TEXT)),
         margin=dict(t=48, r=16, b=40, l=50),
         height=height or fig.layout.height or 360,
     )
+
+    # Axes/grid lines – make them visible on the dark panel
     fig.update_xaxes(
         showgrid=True, gridcolor=GRID,
         zeroline=False, showline=True, linecolor=AXIS,
-        tickfont=dict(color=TEXT)
+        tickfont=dict(color=TEXT), title_font=dict(color=TEXT)
     )
     fig.update_yaxes(
         showgrid=True, gridcolor=GRID,
         zeroline=False, showline=True, linecolor=AXIS,
-        tickfont=dict(color=TEXT)
+        tickfont=dict(color=TEXT), title_font=dict(color=TEXT)
     )
 
-    fig.update_traces(line=dict(width=2.2), selector=dict(type="scatter"))
+    # Only style traces that actually have those properties
+    for tr in fig.data:
+        if tr.type == "scatter":              # lines/markers
+            tr.update(marker=dict(size=6))
+            if hasattr(tr, "line"):
+                tr.update(line=dict(width=2.2))
+        # leave bar traces alone – they don’t support marker.size/line the same way
 
-    # Only marker size for point-based traces
-    fig.update_traces(marker=dict(size=6), selector=dict(type="scatter"))
-    fig.update_traces(marker=dict(size=6), selector=dict(type="scattermapbox"))
-
-    # Optional: tidy bar appearance (bars don't have marker.size)
-    fig.update_traces(
-        marker=dict(line=dict(width=0.5, color=AXIS)),
-        selector=dict(type="bar")
-    )
     return fig
+
 
 def empty_fig(title: str, height: int = 360) -> go.Figure:
     fig = go.Figure()
