@@ -30,35 +30,34 @@ def style_fig(fig: go.Figure, title: str | None = None, height: int | None = Non
         fig.update_layout(title=dict(text=title, font=dict(color=TEXT)))
 
     fig.update_layout(
-        paper_bgcolor=PANEL_BG,   # panel background
-        plot_bgcolor=PANEL_BG,    # plot area background
-        font=dict(color=TEXT),    # default text color
+        template=None,                 # <- kill any global/default template
+        paper_bgcolor=PANEL_BG,
+        plot_bgcolor=PANEL_BG,
+        font=dict(color=TEXT),
         legend=dict(font=dict(color=TEXT)),
         margin=dict(t=48, r=16, b=40, l=50),
         height=height or fig.layout.height or 360,
     )
 
-    # Axes/grid lines – make them visible on the dark panel
+    # brighten grid/axis so they can't disappear on dark bg
     fig.update_xaxes(
-        showgrid=True, gridcolor=GRID,
-        zeroline=False, showline=True, linecolor=AXIS,
-        tickfont=dict(color=TEXT), title_font=dict(color=TEXT)
+        showgrid=True, gridcolor="#3a4a61",
+        zeroline=False, showline=True, linecolor="#607592",
+        tickfont=dict(color="#d1d5db"), title_font=dict(color="#d1d5db")
     )
     fig.update_yaxes(
-        showgrid=True, gridcolor=GRID,
-        zeroline=False, showline=True, linecolor=AXIS,
-        tickfont=dict(color=TEXT), title_font=dict(color=TEXT)
+        showgrid=True, gridcolor="#3a4a61",
+        zeroline=False, showline=True, linecolor="#607592",
+        tickfont=dict(color="#d1d5db"), title_font=dict(color="#d1d5db")
     )
 
-    # Only style traces that actually have those properties
+    # only touch scatter traces (bars don’t support marker.size in the same way)
     for tr in fig.data:
-        if tr.type == "scatter":              # lines/markers
-            tr.update(marker=dict(size=6))
-            if hasattr(tr, "line"):
-                tr.update(line=dict(width=2.2))
-        # leave bar traces alone – they don’t support marker.size/line the same way
+        if tr.type == "scatter":
+            tr.update(marker=dict(size=7, color="#8ab4ff"), line=dict(width=2.6, color="#8ab4ff"))
 
     return fig
+
 
 
 def empty_fig(title: str, height: int = 360) -> go.Figure:
@@ -241,7 +240,14 @@ def render_roads(year, max_sev):
     if df.empty:
         return empty_fig("Top road types", height=360)
     fig = px.bar(df, x="road_type", y="cnt")
+    fig.update_traces(
+        marker_color="#8ab4ff",
+        marker_line_color="#cbd5e1",
+        marker_line_width=0.6,
+        opacity=0.95,
+    )
     return style_fig(fig, "Top road types", height=360)
+
 
 @app.callback(
     Output("map", "figure"),
@@ -253,12 +259,14 @@ def render_map(year, max_sev):
     if df.empty:
         fig = px.scatter_mapbox(lat=[], lon=[], height=560, zoom=4)
         fig.update_layout(mapbox_style="carto-darkmatter")
+        fig.update_traces(marker=dict(size=7, color="#8ab4ff")) 
         return style_fig(fig, "Accidents (sampled)", height=560)
 
     fig = px.scatter_mapbox(
         df, lat="latitude", lon="longitude", color="severity",
         height=560, zoom=4
     )
+    fig.update_traces(marker=dict(size=7))  # <-- make accident dots larger
     fig.update_layout(mapbox_style="carto-darkmatter")
     return style_fig(fig, "Accidents (sampled)", height=560)
 
