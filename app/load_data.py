@@ -63,10 +63,17 @@ def tidy_chunk(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=COLUMN_MAP)
 
     # Convert date/time
+    # Convert date/time  (UK format dates)
     if "accident_date" in df.columns:
-        df["accident_date"] = pd.to_datetime(df["accident_date"], errors="coerce").dt.date
+        df["accident_date"] = pd.to_datetime(
+            df["accident_date"], errors="coerce", dayfirst=True
+        ).dt.date
+
     if "accident_time" in df.columns:
-        df["accident_time"] = pd.to_datetime(df["accident_time"], errors="coerce").dt.time
+        df["accident_time"] = pd.to_datetime(
+            df["accident_time"], errors="coerce"
+        ).dt.time
+
 
     # Cast numeric-ish fields
     for col in ["latitude", "longitude"]:
