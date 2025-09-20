@@ -81,3 +81,9 @@ label {
   background: var(--panel) !important;
   border-radius: 12px;
 }
+
+/* kill the overlay that’s sitting above graphs */
+.panel::before,
+.dash-graph::before,
+.dash-graph::after { display: none !important; }
+
