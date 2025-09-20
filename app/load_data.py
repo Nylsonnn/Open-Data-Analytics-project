@@ -91,41 +91,47 @@ def tidy_chunk(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def main():
-    # Create table + indexes
-    with ENGINE.begin() as conn:
-        conn.execute(text(CREATE_SQL))
+    files = sorted(glob.glob(DATA_GLOB))  # e.g. 2019…2023
+    if not files:
+        print("No files found under", DATA_GLOB)
+        return
 
-    chunksize = 50_000
-    total = 0
+    total_rows = 0
+    for path in files:
+        print(f"\n=== Loading {os.path.basename(path)} ===")
+        per_file = 0
+        for chunk in pd.read_csv(path, chunksize=chunksize, low_memory=False, dtype=str, encoding="utf-8"):
+            df = tidy_chunk(chunk)
 
-    for chunk in pd.read_csv(CSV_PATH, chunksize=chunksize, low_memory=False, dtype=str, encoding="utf-8"):
-        df = tidy_chunk(chunk)
-        with ENGINE.begin() as conn:
-            df.to_sql("_accidents_stage", con=conn, if_exists="replace", index=False)
-            conn.execute(text("""
-                INSERT INTO accidents (
-                    accident_index, accident_date, accident_time,
-                    latitude, longitude, severity,
-                    number_of_casualties, number_of_vehicles,
-                    road_type, speed_limit, weather, light_conditions,
-                    urban_or_rural, raw_json
-                )
-                SELECT
-                    accident_index, accident_date, accident_time,
-                    latitude, longitude, severity,
-                    number_of_casualties, number_of_vehicles,
-                    road_type, speed_limit, weather, light_conditions,
-                    urban_or_rural, raw_json::jsonb      -- <— cast here
-                FROM _accidents_stage
-                ON CONFLICT (accident_index) DO NOTHING;
+            with ENGINE.begin() as conn:
+                df.to_sql("_accidents_stage", con=conn, if_exists="replace", index=False)
+                conn.execute(text("""
+                    INSERT INTO accidents (
+                        accident_index, accident_date, accident_time,
+                        latitude, longitude, severity,
+                        number_of_casualties, number_of_vehicles,
+                        road_type, speed_limit, weather, light_conditions,
+                        urban_or_rural, raw_json
+                    )
+                    SELECT
+                        accident_index, accident_date, accident_time,
+                        latitude, longitude, severity,
+                        number_of_casualties, number_of_vehicles,
+                        road_type, speed_limit, weather, light_conditions,
+                        urban_or_rural, raw_json::jsonb
+                    FROM _accidents_stage
+                    ON CONFLICT (accident_index) DO NOTHING;
 
-                DROP TABLE _accidents_stage;
-            """))
+                    DROP TABLE _accidents_stage;
+                """))
 
-        total += len(df)
-        print(f"Inserted {total} rows...")
+            per_file += len(df)
+            total_rows += len(df)
+            if per_file % 50000 == 0:
+                print(f"Inserted {per_file:,} rows into DB from {os.path.basename(path)}...")
+        print(f"✔ Finished {os.path.basename(path)} — inserted ~{per_file:,} rows (after dedupe).")
 
-    print("✅ Data load complete")
+    print(f"\n✅ Data load complete. Total rows processed (pre-dedupe): {total_rows:,}")
 
 if __name__ == "__main__":
     main()
