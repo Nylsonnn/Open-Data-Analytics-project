@@ -149,18 +149,21 @@ def render_kpis(year, max_sev):
     avg_cas = float(df.loc[0, "avg_cas"])
     avg_veh = float(df.loc[0, "avg_veh"])
 
-    def card(title, value):
-        return html.Div(
-            [
-                html.Div(title, style={"color": "#808080", "fontSize": "14px"}),
-                html.Div(value, style={"fontSize": "28px", "fontWeight": "700"}),
-            ],
-            style={"border": "1px solid #333", "borderRadius": "12px", "padding": "16px"},
-        )
+    return [
+        card("Accidents", f"{n:,}"),
+        card("Avg casualties", f"{avg_cas:.2f}"),
+        card("Avg vehicles", f"{avg_veh:.2f}"),
 
-    return [card("Accidents", f"{n:,}"),
-            card("Avg casualties", f"{avg_cas:.2f}"),
-            card("Avg vehicles", f"{avg_veh:.2f}")]
+    ]
+
+def card(title, value):
+    return html.Div(
+        [
+            html.Div(title, className="kpi-title"),
+            html.Div(value, className="kpi-value"),
+        ],
+        className="kpi-card"
+    )
 
 @app.callback(
     Output("trend", "figure"),
