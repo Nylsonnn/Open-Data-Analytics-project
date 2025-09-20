@@ -258,7 +258,7 @@ def render_map(year, max_sev):
     df = pd.read_sql(points_sql(year, max_sev, limit=5000), ENGINE)
     if df.empty:
         fig = px.scatter_mapbox(lat=[], lon=[], height=560, zoom=4)
-        fig.update_layout(mapbox_style="carto-darkmatter")
+        fig.update_layout(mapbox_style="open-street-map")
         fig.update_traces(marker=dict(size=7, color="#8ab4ff")) 
         return style_fig(fig, "Accidents (sampled)", height=560)
 
