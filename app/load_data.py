@@ -3,6 +3,8 @@ import os
 import json
 import pandas as pd
 from sqlalchemy import create_engine, text
+import numpy as np
+
 
 # ---- DB connection (Docker envs are already set in compose) ----
 DB_HOST = os.getenv("DB_HOST", "db")
@@ -58,7 +60,8 @@ CREATE INDEX IF NOT EXISTS ix_accidents_severity ON accidents (severity);
 
 def tidy_chunk(df: pd.DataFrame) -> pd.DataFrame:
     """Select, rename, and type-cast one chunk."""
-    raw = df.to_dict(orient="records")
+    raw = df.replace({np.nan: None}).to_dict(orient="records")
+    df["raw_json"] = [json.dumps(r) for r in raw]
 
     df = df[[c for c in COLUMN_MAP.keys() if c in df.columns]].copy()
     df = df.rename(columns=COLUMN_MAP)
