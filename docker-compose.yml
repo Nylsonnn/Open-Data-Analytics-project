@@ -8,10 +8,22 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
   app:
-    build: ./app
+    image: python:3.11-slim
+    container_name: ukdata_app
+    working_dir: /app
+    volumes:
+      - ./app:/app
+    command: bash -lc "pip install -r requirements.txt && python dashboard.py"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ukdata
+      DB_USER: postgres
+      DB_PASS: postgres
     ports:
       - "8050:8050"
     depends_on:
       - db
+
 volumes:
   pgdata: {}

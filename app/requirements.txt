@@ -1,4 +1,6 @@
 pandas
-plotly
-dash
 psycopg2-binary
+SQLAlchemy
+dash
+plotly
+python-dotenv
