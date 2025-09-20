@@ -46,10 +46,17 @@ def style_fig(fig: go.Figure, title: str = None, height: int | None = None) -> g
         zeroline=False, showline=True, linecolor=AXIS,
         tickfont=dict(color=TEXT)
     )
-    fig.update_traces(
-        line=dict(width=2.2),
-        marker=dict(size=6)
-    )
+
+    # Apply marker size to all traces (safe for bar/scatter/scattermapbox)
+    fig.update_traces(marker=dict(size=6))
+
+    # Only apply line width to line/marker traces
+    fig.update_traces(line=dict(width=2.2), selector=dict(type="scatter"))
+
+    # (optional) if you want a thin border on bars:
+    # fig.update_traces(marker=dict(line=dict(width=0.5, color=AXIS)),
+    #                   selector=dict(type="bar"))
+
     return fig
 
 def empty_fig(title: str, height: int = 360) -> go.Figure:
