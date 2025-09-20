@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, text
 import numpy as np
 import glob
 
+DATA_GLOB = "data/collisions_*.csv"
 
 # ---- DB connection (Docker envs are already set in compose) ----
 DB_HOST = os.getenv("DB_HOST", "db")
