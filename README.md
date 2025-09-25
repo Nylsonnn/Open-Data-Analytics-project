@@ -1,11 +1,11 @@
-# 🚦 UK Open Data Analytics Dashboard
+# 🚦UK Open Data Analytics Dashboard
 
 An interactive dashboard built with **Dash** and **Plotly** to explore UK road collision open data.  
 It lets you filter by year and accident severity, view KPIs, trends, top road types, and plot accident locations on an interactive map.
 
 ---
 
-## ✨ Features
+## Features
 
 -  **Key Metrics (KPIs):** total accidents, average casualties, average vehicles involved  
 -  **Monthly accident trends** with interactive line charts  
@@ -13,7 +13,7 @@ It lets you filter by year and accident severity, view KPIs, trends, top road ty
 -  **Map view** (sampled points) to explore accident locations  
 ---
 
-## 🛠 Installation
+##  Installation
 
 1. **Clone the repo**  
 
@@ -93,4 +93,4 @@ MIT — feel free to use and adapt.
 
 ---
 
-Built with ❤️ using Dash, Plotly, and PostgreSQL 🚀
+Built with Dash, Plotly, and PostgreSQL 
